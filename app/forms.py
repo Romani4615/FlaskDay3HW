@@ -19,4 +19,8 @@ class CreatePostForm(FlaskForm):
 
 class Comments(FlaskForm):
     comment = TextAreaField('Username', "id", 'body', 'date_created', 'user_id' )
-
+    submit = SubmitField
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = StringField('Password', validators=[DataRequired()])
+    submit = SubmitField()

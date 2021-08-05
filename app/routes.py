@@ -1,7 +1,8 @@
+from flask_wtf import form
 from app import app, db
 from flask import render_template, flash, redirect, url_for
-from app.forms import RegisterForm
-from app.models import User
+from app.forms import CreatePostForm, RegisterForm
+from app.models import User, Post
 
 @app.route('/')
 def index():
@@ -30,6 +31,27 @@ def register():
 
         # Redirect user back to home page
         return redirect(url_for('index'))
-
-        
     return render_template('register.html', title='Register for CT Blog', form=form)
+
+
+@app.route('/createpost', methods=['GET', 'POST'])
+def CreatePost():
+    form = CreatePostForm()
+    if form.validate_on_submit():
+        #grab data from form
+        title = form.title.data
+        body = form.body.data
+        print(title, body)
+        #create new instance of post
+        new_post = Post(title, body, 1)
+
+        # add new post to database
+        db.session.add(new_post)
+        db.session.commit()
+        #flash message
+        
+        flash(f'your post has successfully been created {new_post.title}')
+        return redirect(url_for('index.html'))
+    return render_template('createpost.html', form=form)
+    
+    

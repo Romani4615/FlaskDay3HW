@@ -1,14 +1,17 @@
+from flask_migrate import current
 from flask_wtf import form
 from app import app, db
 from flask import render_template, flash, redirect, url_for
-from app.forms import CreatePostForm, RegisterForm
+from app.forms import CreatePostForm, RegisterForm, LoginForm, Comments
 from app.models import User, Post
+from flask_login import login_required, login_user, logout_user, current_user
 
 @app.route('/')
 def index():
-    name = 'Brian'
+    name = 'Aaron'
     title = 'Coding Temple Intro to Flask'
-    return render_template('index.html', name=name, title=title)
+    all_posts = Post.query.all()
+    return render_template('index.html', name=name, title=title, posts=all_posts)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -35,15 +38,16 @@ def register():
 
 
 @app.route('/createpost', methods=['GET', 'POST'])
+@login_required   #UNCOMMENT WHEN LOGGED IN
 def CreatePost():
     form = CreatePostForm()
     if form.validate_on_submit():
         #grab data from form
         title = form.title.data
         body = form.body.data
-        print(title, body)
+        print(title, body, current_user.id)
         #create new instance of post
-        new_post = Post(title, body, 1)
+        new_post = Post(title, body, current_user.id)
 
         # add new post to database
         db.session.add(new_post)
@@ -51,7 +55,32 @@ def CreatePost():
         #flash message
         
         flash(f'your post has successfully been created {new_post.title}')
-        return redirect(url_for('index.html'))
+        return redirect(url_for('index'))
     return render_template('createpost.html', form=form)
     
-    
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+       #return the first user object
+        user = User.query.filter_by(username=username).first()
+        
+        
+        if user is None or user.check_password(password): 
+            flash('Incorrect Username/Password. Try Again', 'danger')
+            return redirect(url_for('login'))
+
+        login_user(user)
+        flash('You have successfully logged in!', 'success')
+        return redirect(url_for('index'))
+
+
+    return render_template('login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
